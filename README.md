@@ -59,9 +59,19 @@ Fundamental factors use annual report data (fiscal year-end = December). To avoi
 | **Analyst rating change** | Monthly average of analyst rating changes (upgrade = +1, maintain = 0, downgrade = −1) |
 | **SEO indicator** | Binary variable = 1 if the firm conducted a seasoned equity offering in the past 12 months |
 
-### Coverage
+### Data Availability and Coverage
 
-Most factors have >93% coverage over the universe. Exceptions: turnover and idiosyncratic volatility have ~35% coverage because daily return data is only available from 2021 onward; analyst rating change has ~10% coverage (data starts around 2019).
+Most factors (size, momentum, reversal, leverage, asset growth, accruals, ROA, B/M, SEO) have >93% coverage over the universe and span the full data period from the early 1990s onward.
+
+However, three factors have severely limited temporal coverage due to the availability of underlying CSMAR raw data:
+
+| Factor | Required Raw Data | Actual Data Available | Portfolio Data Range | Impact |
+|--------|------------------|----------------------|---------------------|--------|
+| **Idio. Vol.** | Daily stock returns | 2021–2025 only | 2021–2025 (60 months) | Published in 2006; should have IS (1991–2000) and OOS (2001–2006), but daily data starts too late — entire sample is post-publication |
+| **Turnover** | Daily trading volume | 2021–2025 only | 2021–2025 (59 months) | Published in 1998; same issue — no pre-publication data available |
+| **Analyst Rating** | Analyst rating records | 2019–2026 only | No portfolio data (insufficient coverage per month) | Published in 2004; should have IS (1991–1998) and OOS (1999–2004), but rating data starts in 2019 — too late and too sparse to form portfolios |
+
+As a result, only **Asset Growth** (published 2008, data from 1994) has complete in-sample, out-of-sample, and post-publication periods in the Chinese data. If earlier daily return data were available from CSMAR, Idiosyncratic Volatility could also provide a full three-period analysis.
 
 ## Portfolio Construction
 
