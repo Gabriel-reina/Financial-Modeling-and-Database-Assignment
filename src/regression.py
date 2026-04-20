@@ -17,17 +17,6 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 DATA_START = "1991-01-01"
 
 def _get_periods(factor_name):
-    """Return (data_start, in_sample_end, post_pub_start_date).
-
-    Following McLean & Pontiff (2016):
-    - In-sample: data start -> original sample end year
-    - Out-of-sample: original sample end year -> publication year
-    - Post-publication: after publication year
-
-    For China data starting in 1991, if the original sample ended before 1991,
-    the entire pre-publication period is treated as out-of-sample (the factor
-    was discovered but not yet published, so Chinese investors did not know it).
-    """
     sample_end_year, pub_year = FACTOR_PUBLICATION_INFO[factor_name]
     in_sample_end = f"{max(sample_end_year, 1990)}-12-31"
     out_sample_end = f"{pub_year}-12-31"
@@ -52,7 +41,7 @@ def table1_summary_statistics():
 
         periods = {
             f"In-Sample (~{sample_end_year})": (data_start, is_end),
-            f"Out-of-Sample ({sample_end_year+1}-{pub_year})": (f"{max(sample_end_year,2000)+1}-01-01", oos_end),
+            f"Out-of-Sample ({sample_end_year+1}-{pub_year})": (f"{max(sample_end_year,1990)+1}-01-01", oos_end),
             f"Post-Publication (>{pub_year})": (f"{pub_year+1}-01-01", "2099-12-31"),
         }
 
@@ -102,7 +91,6 @@ def table2_main_regression():
     port_ret = load_portfolio_returns()
     port_ret["month"] = pd.to_datetime(port_ret["month"])
 
-    # assign per-factor period dummies based on real publication dates
     rows = []
     valid_factors = []
     for factor_name in port_ret["factor_name"].unique():
@@ -152,7 +140,6 @@ def table2_main_regression():
     t_post_sample = beta_post_sample / se_post_sample
     t_post_pub = beta_post_pub / se_post_pub
 
-    # in-sample mean: union of each factor's own in-sample period
     is_masks = []
     for factor_name in valid_factors:
         data_start, is_end, _ = _get_periods(factor_name)
@@ -168,7 +155,6 @@ def table2_main_regression():
     decay_oos = beta_post_sample / in_sample_mean * 100 if in_sample_mean != 0 else np.nan
     decay_post_pub = beta_post_pub / in_sample_mean * 100 if in_sample_mean != 0 else np.nan
 
-    # model 2: interaction with in-sample mean
     is_mean_by_factor = {}
     for factor_name in valid_factors:
         data_start, is_end, _ = _get_periods(factor_name)

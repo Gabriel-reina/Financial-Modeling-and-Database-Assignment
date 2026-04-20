@@ -37,7 +37,6 @@ FACTOR_CATEGORIES = {
     "seo_indicator": "Event",
 }
 
-# (original sample end year, publication year) from McLean & Pontiff (2016) Table IA.III
 FACTOR_PUBLICATION_INFO = {
     "size":               (1975, 1981),   # Banz (JFE 1981), sample 1926-1975
     "momentum":           (1989, 1993),   # Jegadeesh & Titman (JF 1993), sample 1964-1989

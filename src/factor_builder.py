@@ -18,18 +18,15 @@ def build_stock_universe():
         return pd.read_parquet(output_path)
     monthly = _load("monthly_return")
 
-    # 仅保留 A 股
     a_share_types = [1, 4, 16, 32]
     monthly = monthly[monthly["market_type"].isin(a_share_types)].copy()
 
-    # 剔除上市不满 6 个月的新股
     monthly["months_since_ipo"] = (
         (monthly["month"].dt.year - monthly["list_date"].dt.year) * 12
         + (monthly["month"].dt.month - monthly["list_date"].dt.month)
     )
     monthly = monthly[monthly["months_since_ipo"] >= 6].copy()
 
-    # 剔除收益率缺失
     monthly = monthly.dropna(subset=["ret"]).copy()
 
     monthly.sort_values(["stkcd", "month"], inplace=True)
@@ -54,7 +51,6 @@ def factor_momentum(universe):
 
     df["cum_12"] = grouped.transform(lambda x: x.rolling(12, min_periods=12).sum())
     df["cum_1"] = df["log_ret"]
-    # 动量 = 过去 12 个月 - 最近 1 个月 (即 t-12 到 t-2)
     df["momentum"] = df["cum_12"] - df["cum_1"]
 
     return df[["stkcd", "month", "momentum"]].dropna()

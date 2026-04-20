@@ -102,13 +102,13 @@ Following the original paper's framework, each factor has its own three-period s
 | Analyst Rating | Jegadeesh et al. (JF 2004) | 1985–1998 | 2004 | 1991–1998 | 1999–2004 | 2005–2026 |
 | SEO | Loughran & Ritter (JF 1995) | 1975–1984 | 1995 | — | — | 1996–2026 |
 
-Since China's A-share data begins in 1991, most factors' original sample periods ended before the Chinese market data starts. For these factors, the entire Chinese sample falls into the **post-publication** period — meaning Chinese investors already had access to the published research throughout our data window. Only Asset Growth (pub. 2008) and Idiosyncratic Volatility (pub. 2006) have meaningful in-sample and out-of-sample periods in the Chinese data.
+Since China's A-share data begins in 1991, most factors' original sample periods ended before the Chinese market data starts. For these factors, the entire Chinese sample falls into the **post-publication** period — meaning Chinese investors already had access to the published research throughout our data window. Only Asset Growth (pub. 2008) has all three periods (IS, OOS, PP) in the Chinese data. ROA (pub. 1996) has out-of-sample (1994–1996, 32 months) and post-publication data but no in-sample data.
 
 ## Experiments and Results
 
 ### Table I: Summary Statistics
 
-Because most factors were published before our Chinese data begins (1991), the majority of factors have data only in the post-publication period. Only Asset Growth has all three periods; ROA has out-of-sample and post-publication data.
+Because most factors were published before our Chinese data begins (1991), the majority of factors have data only in the post-publication period. Only Asset Growth has all three periods. ROA has out-of-sample (32 months, mean = +2.38%, t = 1.78) and post-publication data, but no in-sample data.
 
 Average monthly long-short returns (%) in the post-publication period:
 
@@ -127,6 +127,8 @@ Average monthly long-short returns (%) in the post-publication period:
 | Idio. Vol. | Market | 2006 | −10.97 | −15.33 | 60 |
 
 For Asset Growth (the only factor with in-sample data): IS mean = −1.12%, OOS mean = −0.90%, PP mean = −1.00%, showing minimal decay (−10.9%).
+
+For ROA: OOS mean = +2.38% (t = 1.78, 32 months), PP mean = +1.36% (t = 5.01, 351 months). The decline from OOS to PP suggests some post-publication weakening, though the OOS period is short.
 
 ### Table II: Panel Regression
 
@@ -163,7 +165,7 @@ The most important finding is structural: **most US-discovered anomalies were al
 |-----------|--------------------|--------------------|
 | **Number of predictors** | 97 | 12 |
 | **Data period** | 1926–2013 | 1991–2026 |
-| **Factors with IS+PP data** | 97 (all) | 1 (Asset Growth only) |
+| **Factors with IS+PP data** | 97 (all) | 1 (Asset Growth); ROA has OOS+PP |
 | **Average IS return** | ~0.45% per month | −1.12% (Asset Growth) |
 | **Post-publication decay** | ~32% decline | −10.9% (Asset Growth) |
 | **Panel regression β₂** | Significantly negative (−0.32, t≈−3) | Insignificant (+0.12, t=0.23) |
@@ -197,15 +199,42 @@ The most important finding is structural: **most US-discovered anomalies were al
 └── requirements.txt
 ```
 
+## Data Download
+
+The raw data files are too large (~2.5 GB) to include in the repository. You need to download them from CSMAR and place them in the `data/raw/` directory with the following structure:
+
+```
+data/
+└── raw/
+    ├── analyst_rating/     # Analyst rating records (.xlsx)
+    ├── balance_sheet/      # Balance sheet data (.xlsx)
+    ├── daily_return/       # Daily stock returns (.xlsx)
+    ├── monthly_quote/      # Monthly adjusted close prices (.xlsx)
+    ├── monthly_return/     # Monthly stock returns (.xlsx)
+    ├── rights_issue/       # Rights issue events (.xlsx)
+    └── seasoned_equity/    # SEO events (.xlsx)
+```
+
+After placing the raw `.xlsx` files, run `python src/data_loader.py` to parse and convert them into `.parquet` format under `data/processed/`. All subsequent scripts read from `data/processed/`.
+
 ## Usage
 
 ```bash
 pip install -r requirements.txt
 
+# Step 1: Parse raw CSMAR xlsx files → parquet
 python src/data_loader.py
+
+# Step 2: Construct 12 anomaly factors
 python src/factor_builder.py
+
+# Step 3: Form quintile long-short portfolios
 python src/portfolio.py
+
+# Step 4: Run panel regressions (Tables I–V)
 python src/regression.py
+
+# Step 5: Generate figures
 python src/visualization.py
 ```
 
