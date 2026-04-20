@@ -37,6 +37,22 @@ FACTOR_CATEGORIES = {
     "seo_indicator": "Event",
 }
 
+# (original sample end year, publication year) from McLean & Pontiff (2016) Table IA.III
+FACTOR_PUBLICATION_INFO = {
+    "size":               (1975, 1981),   # Banz (JFE 1981), sample 1926-1975
+    "momentum":           (1989, 1993),   # Jegadeesh & Titman (JF 1993), sample 1964-1989
+    "reversal":           (1987, 1990),   # Jegadeesh (1989, published 1990), sample 1934-1987
+    "turnover":           (1991, 1998),   # Datar, Naik & Radcliffe (JFM 1998), sample 1962-1991
+    "idiovol":            (2000, 2006),   # Ang et al. (JF 2006), sample 1986-2000
+    "leverage":           (1981, 1988),   # Bhandari (JFE 1988), sample 1946-1981
+    "asset_growth":       (2003, 2008),   # Cooper, Gulen & Schill (JF 2008), sample 1968-2003
+    "accruals_ratio":     (1991, 1996),   # Sloan (AR 1996), sample 1962-1991
+    "roa":                (1993, 1996),   # Haugen & Baker (JFE 1996), sample 1979-1993
+    "bm":                 (1990, 1992),   # Fama & French (JF 1992), sample 1963-1990
+    "analyst_rating_chg": (1998, 2004),   # Jegadeesh et al. (JF 2004), sample 1985-1998
+    "seo_indicator":      (1984, 1995),   # Loughran & Ritter (JF 1995), sample 1975-1984
+}
+
 
 def build_long_short_portfolios(panel=None, min_stocks_per_group=30):
     output_path = os.path.join(PROCESSED_DIR, "portfolio_returns.parquet")

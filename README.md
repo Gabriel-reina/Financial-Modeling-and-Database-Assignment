@@ -4,7 +4,7 @@ This project replicates the core analysis from McLean and Pontiff (2016, *Journa
 
 ## Data
 
-All data comes from CSMAR (China Stock Market & Accounting Research Database), covering 2000–2026. The raw datasets include:
+All data comes from CSMAR (China Stock Market & Accounting Research Database), covering 1991–2026. The raw datasets include:
 
 | Dataset | Records | Description |
 |---------|---------|-------------|
@@ -75,102 +75,100 @@ For each factor, we form **quintile long-short portfolios** each month:
 
 ## Sample Periods
 
-Following the original paper's framework, we split the sample into three periods:
+Following the original paper's framework, each factor has its own three-period split based on the **real publication date** of the original academic paper that discovered it (from McLean & Pontiff 2016, Table IA.III):
 
-| Period | Years | Purpose |
-|--------|-------|---------|
-| In-sample | 2000–2010 | Original factor discovery period |
-| Out-of-sample | 2011–2015 | Pre-publication validation |
-| Post-publication | 2016–2026 | Decay analysis after dissemination |
+| Factor | Original Paper | Sample Period | Published | In-Sample | Out-of-Sample | Post-Publication |
+|--------|---------------|---------------|-----------|-----------|---------------|-----------------|
+| Size | Banz (JFE 1981) | 1926–1975 | 1981 | — | — | 1991–2026 |
+| Momentum | Jegadeesh & Titman (JF 1993) | 1964–1989 | 1993 | — | — | 1994–2026 |
+| Reversal | Jegadeesh (1990) | 1934–1987 | 1990 | — | — | 1991–2026 |
+| Turnover | Datar et al. (JFM 1998) | 1962–1991 | 1998 | — | — | 1999–2026 |
+| Idio. Vol. | Ang et al. (JF 2006) | 1986–2000 | 2006 | 1991–2000 | 2001–2006 | 2007–2026 |
+| Leverage | Bhandari (JFE 1988) | 1946–1981 | 1988 | — | — | 1991–2026 |
+| Asset Growth | Cooper et al. (JF 2008) | 1968–2003 | 2008 | 1991–2003 | 2004–2008 | 2009–2026 |
+| Accruals | Sloan (AR 1996) | 1962–1991 | 1996 | — | — | 1997–2026 |
+| ROA | Haugen & Baker (JFE 1996) | 1979–1993 | 1996 | — | 1994–1996 | 1997–2026 |
+| B/M | Fama & French (JF 1992) | 1963–1990 | 1992 | — | — | 1993–2026 |
+| Analyst Rating | Jegadeesh et al. (JF 2004) | 1985–1998 | 2004 | 1991–1998 | 1999–2004 | 2005–2026 |
+| SEO | Loughran & Ritter (JF 1995) | 1975–1984 | 1995 | — | — | 1996–2026 |
+
+Since China's A-share data begins in 1991, most factors' original sample periods ended before the Chinese market data starts. For these factors, the entire Chinese sample falls into the **post-publication** period — meaning Chinese investors already had access to the published research throughout our data window. Only Asset Growth (pub. 2008) and Idiosyncratic Volatility (pub. 2006) have meaningful in-sample and out-of-sample periods in the Chinese data.
 
 ## Experiments and Results
 
 ### Table I: Summary Statistics
 
-Average monthly long-short returns (%) across the three periods:
+Because most factors were published before our Chinese data begins (1991), the majority of factors have data only in the post-publication period. Only Asset Growth has all three periods; ROA has out-of-sample and post-publication data.
 
-| Factor | Category | In-Sample | t-stat | Post-Publication | t-stat |
-|--------|----------|-----------|--------|------------------|--------|
-| Reversal | Market | +1.34 | 3.30 | +0.74 | 2.14 |
-| ROA | Fundamental | +1.62 | 3.11 | +1.20 | 3.41 |
-| Size | Market | −2.31 | −4.11 | −2.88 | −6.50 |
-| B/M | Valuation | −3.47 | −8.24 | −3.25 | −7.45 |
-| Momentum | Market | −0.88 | −1.60 | −0.31 | −0.78 |
-| Accruals | Fundamental | −0.60 | −3.47 | −0.20 | −1.51 |
-| Asset growth | Fundamental | −0.68 | −1.84 | −1.11 | −3.65 |
-| SEO | Event | −0.70 | −1.73 | +0.29 | 2.31 |
-| Leverage | Fundamental | +0.00 | 0.01 | +0.04 | 0.17 |
+Average monthly long-short returns (%) in the post-publication period:
 
-Cross-factor average in-sample monthly return: **−0.63%**, post-publication: **−1.69%**.
+| Factor | Category | Pub Year | Post-Pub Mean (%) | t-stat | N months |
+|--------|----------|----------|-------------------|--------|----------|
+| Reversal | Market | 1990 | +1.20 | 3.84 | 389 |
+| ROA | Fundamental | 1996 | +1.36 | 5.01 | 351 |
+| Leverage | Fundamental | 1988 | +0.13 | 0.74 | 390 |
+| SEO | Event | 1995 | −0.25 | −1.31 | 322 |
+| Accruals | Fundamental | 1996 | −0.39 | −3.74 | 335 |
+| Momentum | Market | 1993 | −0.66 | −2.24 | 379 |
+| Asset Growth | Fundamental | 2008 | −1.00 | −4.39 | 207 |
+| Turnover | Market | 1998 | −2.11 | −3.30 | 59 |
+| Size | Market | 1981 | −2.32 | −7.83 | 390 |
+| B/M | Valuation | 1992 | −4.16 | −12.21 | 390 |
+| Idio. Vol. | Market | 2006 | −10.97 | −15.33 | 60 |
+
+For Asset Growth (the only factor with in-sample data): IS mean = −1.12%, OOS mean = −0.90%, PP mean = −1.00%, showing minimal decay (−10.9%).
 
 ### Table II: Panel Regression
 
-We estimate the panel regression with predictor fixed effects:
+We estimate the panel regression with predictor fixed effects, where period dummies are assigned per-factor based on each factor's real publication date:
 
-$$R_{i,t} = \alpha_i + \beta_1 \cdot \text{PostSample}_t + \beta_2 \cdot \text{PostPublication}_t + \varepsilon_{i,t}$$
+$$R_{i,t} = \alpha_i + \beta_1 \cdot \text{PostSample}_{i,t} + \beta_2 \cdot \text{PostPublication}_{i,t} + \varepsilon_{i,t}$$
 
-where \(R_{i,t}\) is the long-short return of factor \(i\) in month \(t\), and standard errors are clustered by month.
+Since only Asset Growth has all three periods in the Chinese data, the regression is effectively based on one factor:
 
 | Variable | Coefficient | Clustered SE | t-stat |
 |----------|-------------|-------------|--------|
-| Post-Sample (β₁) | +0.054 | 0.153 | 0.35 |
-| Post-Publication (β₂) | +0.102 | 0.130 | 0.79 |
+| Post-Sample (β₁) | +0.218 | 0.852 | 0.26 |
+| Post-Publication (β₂) | +0.122 | 0.526 | 0.23 |
 
-Neither coefficient is statistically significant, suggesting that on average, factor returns in China did not experience a sharp structural break at the period boundaries. This contrasts with the US results where McLean & Pontiff find significant negative β₂.
+Neither coefficient is statistically significant, suggesting no meaningful decay for Asset Growth in China.
 
 ### Table III: Cross-Sectional Decay by Factor
 
+Only factors with ≥12 months of both in-sample and post-publication data are included. In our Chinese sample, only Asset Growth qualifies:
+
 | Factor | IS Mean (%) | PP Mean (%) | Decay (pp) | Decay (%) |
 |--------|-------------|-------------|------------|-----------|
-| SEO | −0.70 | +0.29 | +0.99 | −141% (sign flip) |
-| Momentum | −0.88 | −0.31 | +0.56 | −64% |
-| Accruals | −0.60 | −0.20 | +0.41 | −67% |
-| Reversal | +1.34 | +0.74 | −0.60 | −45% |
-| ROA | +1.62 | +1.20 | −0.42 | −26% |
-| B/M | −3.47 | −3.25 | +0.21 | −6% |
-| Size | −2.31 | −2.88 | −0.56 | +24% (strengthened) |
-| Asset growth | −0.68 | −1.11 | −0.43 | +63% (strengthened) |
+| Asset Growth | −1.12 | −1.00 | +0.12 | −10.9% |
 
-Some factors (reversal, momentum, accruals) show decay consistent with the publication effect. Others (size, asset growth) actually strengthened post-publication.
+The limited cross-sectional variation (only one factor) prevents meaningful cross-sectional analysis of decay patterns.
 
-### Table IV: Decay by Predictor Type
+### Key Insight
 
-| Category | N Factors | IS Mean (%) | PP Mean (%) | Decay (pp) |
-|----------|-----------|-------------|-------------|------------|
-| Market | 5 | −0.62 | −2.22 | −1.61 |
-| Fundamental | 4 | +0.08 | −0.02 | −0.10 |
-| Valuation | 1 | −3.47 | −3.25 | +0.21 |
-| Event | 1 | −0.70 | +0.29 | +0.99 |
-
-Market-based factors show the largest post-publication change (−1.61 pp), but this is driven by turnover and idiosyncratic volatility entering the post-publication sample (they lack in-sample data). Fundamental and valuation factors are relatively stable.
-
-### Table V: Arbitrage Costs
-
-We proxy arbitrage costs by the average size percentile rank of stocks in the extreme quintiles. Factors involving smaller stocks (lower size rank ≈ higher arbitrage cost) are expected to decay less, because arbitrage is harder.
-
-The regression of decay on average size rank yields mixed results, consistent with the fact that China's short-selling constraints and retail-dominated market structure make the arbitrage cost channel less clean than in the US.
+The most important finding is structural: **most US-discovered anomalies were already published before Chinese market data begins**, so the entire Chinese sample is post-publication. This means we cannot directly replicate the in-sample vs. post-publication comparison for most factors. Instead, the Chinese data primarily tells us about the **long-run persistence** of these anomalies in a different market environment.
 
 ## Comparison with McLean & Pontiff (2016) US Results
 
 | Dimension | US (Original Paper) | China (This Study) |
 |-----------|--------------------|--------------------|
-| **Average IS return** | ~0.45% per month | −0.63% per month |
-| **Post-publication decay** | ~32% decline | Mixed: some factors decay, others strengthen |
-| **Panel regression β₂** | Significantly negative (−0.12, t≈−3) | Insignificant (+0.10, t=0.79) |
-| **Strongest decay** | Earnings-based, event-driven factors | Momentum, accruals, reversal |
-| **Factors that persist** | Factors with high arbitrage costs | Size, B/M, asset growth |
+| **Number of predictors** | 97 | 12 |
+| **Data period** | 1926–2013 | 1991–2026 |
+| **Factors with IS+PP data** | 97 (all) | 1 (Asset Growth only) |
+| **Average IS return** | ~0.45% per month | −1.12% (Asset Growth) |
+| **Post-publication decay** | ~32% decline | −10.9% (Asset Growth) |
+| **Panel regression β₂** | Significantly negative (−0.32, t≈−3) | Insignificant (+0.12, t=0.23) |
 
 ### Why the Differences?
 
-1. **Market structure**: China's A-share market is dominated by retail investors (~80% of trading volume), whereas the US is institution-dominated. Retail investors are less likely to read academic papers and trade on published anomalies, so the "publication effect" is weaker.
+1. **Temporal mismatch**: Most US anomalies were published before Chinese market data begins (1991). The original papers used US data from the 1920s–1990s, so by the time Chinese data is available, these factors are already in the post-publication regime. This fundamentally limits the in-sample vs. post-publication comparison.
 
-2. **Short-selling constraints**: China introduced short-selling only in 2010 (margin trading pilot), and the eligible stock list remains limited. Many anomalies require shorting to exploit, so even if investors learn about them, implementation is restricted.
+2. **Market structure**: China's A-share market is dominated by retail investors (~80% of trading volume), whereas the US is institution-dominated. Retail investors are less likely to read academic papers and trade on published anomalies, so the "publication effect" is weaker.
 
-3. **Regulatory environment**: China's market has frequent trading halts, IPO suspensions, and policy-driven interventions that can dominate factor returns, making it harder to isolate the publication effect.
+3. **Short-selling constraints**: China introduced short-selling only in 2010 (margin trading pilot), and the eligible stock list remains limited. Many anomalies require shorting to exploit, so even if investors learn about them, implementation is restricted.
 
-4. **Factor definitions**: Some factors (e.g., size, B/M) reflect structural features of the Chinese market (state-owned enterprise premiums, shell value of small caps) rather than pure mispricing, so they persist regardless of academic attention.
+4. **Regulatory environment**: China's market has frequent trading halts, IPO suspensions, and policy-driven interventions that can dominate factor returns, making it harder to isolate the publication effect.
 
-5. **Sample period**: Our post-publication period (2016–2026) includes several major market events (2015 crash aftermath, COVID-19, regulatory crackdowns on tech/education sectors) that may mask or amplify factor returns independently of publication effects.
+5. **Factor definitions**: Some factors (e.g., size, B/M) reflect structural features of the Chinese market (state-owned enterprise premiums, shell value of small caps) rather than pure mispricing, so they persist regardless of academic attention.
 
 ## Project Structure
 

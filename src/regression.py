@@ -6,29 +6,32 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
+from portfolio import FACTOR_CATEGORIES, FACTOR_PUBLICATION_INFO
+
 PROCESSED_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "processed")
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-IN_SAMPLE_START = "2000-01-01"
-IN_SAMPLE_END = "2010-12-31"
-OUT_SAMPLE_END = "2015-12-31"
-POST_PUB_END = "2026-12-31"
+DATA_START = "1991-01-01"
 
-FACTOR_CATEGORIES = {
-    "size": "Market",
-    "momentum": "Market",
-    "reversal": "Market",
-    "turnover": "Market",
-    "idiovol": "Market",
-    "leverage": "Fundamental",
-    "asset_growth": "Fundamental",
-    "accruals_ratio": "Fundamental",
-    "roa": "Fundamental",
-    "bm": "Valuation",
-    "analyst_rating_chg": "Event",
-    "seo_indicator": "Event",
-}
+def _get_periods(factor_name):
+    """Return (data_start, in_sample_end, post_pub_start_date).
+
+    Following McLean & Pontiff (2016):
+    - In-sample: data start -> original sample end year
+    - Out-of-sample: original sample end year -> publication year
+    - Post-publication: after publication year
+
+    For China data starting in 1991, if the original sample ended before 1991,
+    the entire pre-publication period is treated as out-of-sample (the factor
+    was discovered but not yet published, so Chinese investors did not know it).
+    """
+    sample_end_year, pub_year = FACTOR_PUBLICATION_INFO[factor_name]
+    in_sample_end = f"{max(sample_end_year, 1990)}-12-31"
+    out_sample_end = f"{pub_year}-12-31"
+    return DATA_START, in_sample_end, out_sample_end
 
 
 def load_portfolio_returns():
@@ -39,16 +42,26 @@ def table1_summary_statistics():
     port_ret = load_portfolio_returns()
     port_ret["month"] = pd.to_datetime(port_ret["month"])
 
-    periods = {
-        "In-Sample (2000-2010)": (IN_SAMPLE_START, IN_SAMPLE_END),
-        "Out-of-Sample (2011-2015)": ("2011-01-01", OUT_SAMPLE_END),
-        "Post-Publication (2016-2026)": ("2016-01-01", POST_PUB_END),
-    }
-
     results = []
     for factor_name in port_ret["factor_name"].unique():
+        if factor_name not in FACTOR_PUBLICATION_INFO:
+            continue
         factor_data = port_ret[port_ret["factor_name"] == factor_name]
-        row = {"Factor": factor_name, "Category": FACTOR_CATEGORIES.get(factor_name, "Other")}
+        data_start, is_end, oos_end = _get_periods(factor_name)
+        sample_end_year, pub_year = FACTOR_PUBLICATION_INFO[factor_name]
+
+        periods = {
+            f"In-Sample (~{sample_end_year})": (data_start, is_end),
+            f"Out-of-Sample ({sample_end_year+1}-{pub_year})": (f"{max(sample_end_year,2000)+1}-01-01", oos_end),
+            f"Post-Publication (>{pub_year})": (f"{pub_year+1}-01-01", "2099-12-31"),
+        }
+
+        row = {
+            "Factor": factor_name,
+            "Category": FACTOR_CATEGORIES.get(factor_name, "Other"),
+            "SampleEndYear": sample_end_year,
+            "PubYear": pub_year,
+        }
 
         for period_name, (start, end) in periods.items():
             sub = factor_data[
@@ -80,7 +93,6 @@ def table1_summary_statistics():
         summary_row[col] = df_result[col].mean()
     df_result = pd.concat([df_result, pd.DataFrame([summary_row])], ignore_index=True)
 
-    # 保存
     output_path = os.path.join(OUTPUT_DIR, "table1_summary_statistics.csv")
     df_result.to_csv(output_path, index=False, float_format="%.4f")
     return df_result
@@ -90,30 +102,33 @@ def table2_main_regression():
     port_ret = load_portfolio_returns()
     port_ret["month"] = pd.to_datetime(port_ret["month"])
 
+    # assign per-factor period dummies based on real publication dates
+    rows = []
     valid_factors = []
     for factor_name in port_ret["factor_name"].unique():
-        sub = port_ret[port_ret["factor_name"] == factor_name]
-        in_sample = sub[(sub["month"] >= IN_SAMPLE_START) & (sub["month"] <= IN_SAMPLE_END)]
-        if len(in_sample) >= 24:
-            valid_factors.append(factor_name)
+        if factor_name not in FACTOR_PUBLICATION_INFO:
+            continue
+        sub = port_ret[port_ret["factor_name"] == factor_name].copy()
+        data_start, is_end, oos_end = _get_periods(factor_name)
 
-    port_ret = port_ret[port_ret["factor_name"].isin(valid_factors)].copy()
+        in_sample = sub[(sub["month"] >= data_start) & (sub["month"] <= is_end)]
+        if len(in_sample) < 12:
+            continue
+        valid_factors.append(factor_name)
 
-    port_ret["post_sample"] = (
-        (port_ret["month"] > IN_SAMPLE_END) & (port_ret["month"] <= OUT_SAMPLE_END)
-    ).astype(int)
-    port_ret["post_publication"] = (port_ret["month"] > OUT_SAMPLE_END).astype(int)
+        sub["post_sample"] = (
+            (sub["month"] > is_end) & (sub["month"] <= oos_end)
+        ).astype(int)
+        sub["post_publication"] = (sub["month"] > oos_end).astype(int)
+        rows.append(sub)
 
+    port_ret = pd.concat(rows, ignore_index=True)
     port_ret["ls_return_pct"] = port_ret["ls_return"] * 100
-
-    factor_means = port_ret.groupby("factor_name")["ls_return_pct"].transform("mean")
-    port_ret["ls_return_demean"] = port_ret["ls_return_pct"] - factor_means
 
     from numpy.linalg import lstsq
 
     dependent = port_ret["ls_return_pct"].values
     intercept = np.ones(len(port_ret))
-
     factor_dummies = pd.get_dummies(port_ret["factor_name"], drop_first=True, dtype=float)
 
     explanatory_vars = np.column_stack([
@@ -123,9 +138,8 @@ def table2_main_regression():
         port_ret["post_publication"].values,
     ])
 
-    beta, residuals, rank, sv = lstsq(explanatory_vars, dependent, rcond=None)
-    fitted = explanatory_vars @ beta
-    resid = dependent - fitted
+    beta, _, _, _ = lstsq(explanatory_vars, dependent, rcond=None)
+    resid = dependent - explanatory_vars @ beta
 
     n_factors = len(valid_factors)
     beta_post_sample = beta[-2]
@@ -138,17 +152,34 @@ def table2_main_regression():
     t_post_sample = beta_post_sample / se_post_sample
     t_post_pub = beta_post_pub / se_post_pub
 
-    in_sample_data = port_ret[
-        (port_ret["month"] >= IN_SAMPLE_START) & (port_ret["month"] <= IN_SAMPLE_END)
-    ]
-    in_sample_mean = in_sample_data["ls_return_pct"].mean()
+    # in-sample mean: union of each factor's own in-sample period
+    is_masks = []
+    for factor_name in valid_factors:
+        data_start, is_end, _ = _get_periods(factor_name)
+        mask = (
+            (port_ret["factor_name"] == factor_name)
+            & (port_ret["month"] >= data_start)
+            & (port_ret["month"] <= is_end)
+        )
+        is_masks.append(mask)
+    in_sample_mask = pd.concat([pd.Series(m) for m in is_masks], axis=1).any(axis=1)
+    in_sample_mean = port_ret.loc[in_sample_mask, "ls_return_pct"].mean()
 
     decay_oos = beta_post_sample / in_sample_mean * 100 if in_sample_mean != 0 else np.nan
     decay_post_pub = beta_post_pub / in_sample_mean * 100 if in_sample_mean != 0 else np.nan
 
-    port_ret["in_sample_mean"] = port_ret["factor_name"].map(
-        in_sample_data.groupby("factor_name")["ls_return_pct"].mean()
-    )
+    # model 2: interaction with in-sample mean
+    is_mean_by_factor = {}
+    for factor_name in valid_factors:
+        data_start, is_end, _ = _get_periods(factor_name)
+        sub = port_ret[
+            (port_ret["factor_name"] == factor_name)
+            & (port_ret["month"] >= data_start)
+            & (port_ret["month"] <= is_end)
+        ]
+        is_mean_by_factor[factor_name] = sub["ls_return_pct"].mean() if len(sub) > 0 else 0
+
+    port_ret["in_sample_mean"] = port_ret["factor_name"].map(is_mean_by_factor)
     port_ret["post_pub_x_mean"] = port_ret["post_publication"] * port_ret["in_sample_mean"]
     port_ret["post_sample_x_mean"] = port_ret["post_sample"] * port_ret["in_sample_mean"]
 
@@ -222,10 +253,14 @@ def table3_cross_sectional_decay():
 
     factor_stats = []
     for factor_name in port_ret["factor_name"].unique():
+        if factor_name not in FACTOR_PUBLICATION_INFO:
+            continue
         sub = port_ret[port_ret["factor_name"] == factor_name]
+        data_start, is_end, oos_end = _get_periods(factor_name)
+        sample_end_year, pub_year = FACTOR_PUBLICATION_INFO[factor_name]
 
-        in_sample = sub[(sub["month"] >= IN_SAMPLE_START) & (sub["month"] <= IN_SAMPLE_END)]
-        post_pub = sub[sub["month"] > OUT_SAMPLE_END]
+        in_sample = sub[(sub["month"] >= data_start) & (sub["month"] <= is_end)]
+        post_pub = sub[sub["month"] > oos_end]
 
         if len(in_sample) < 12 or len(post_pub) < 12:
             continue
@@ -241,6 +276,8 @@ def table3_cross_sectional_decay():
         factor_stats.append({
             "factor": factor_name,
             "category": FACTOR_CATEGORIES.get(factor_name, "Other"),
+            "sample_end_year": sample_end_year,
+            "pub_year": pub_year,
             "in_sample_mean": is_mean,
             "in_sample_t": is_t,
             "post_pub_mean": pp_mean,
@@ -262,26 +299,31 @@ def table3_cross_sectional_decay():
     df_stats.to_csv(output_path, index=False, float_format="%.4f")
     return df_stats
 
-
 def table4_by_predictor_type():
     port_ret = load_portfolio_returns()
     port_ret["month"] = pd.to_datetime(port_ret["month"])
     port_ret["category"] = port_ret["factor_name"].map(FACTOR_CATEGORIES)
-    port_ret["post_publication"] = (port_ret["month"] > OUT_SAMPLE_END).astype(int)
     port_ret["ls_return_pct"] = port_ret["ls_return"] * 100
 
     results = []
     for category in ["Market", "Fundamental", "Valuation", "Event"]:
         cat_data = port_ret[port_ret["category"] == category]
-        other_data = port_ret[port_ret["category"] != category]
 
         if len(cat_data) == 0:
             continue
 
-        cat_is = cat_data[
-            (cat_data["month"] >= IN_SAMPLE_START) & (cat_data["month"] <= IN_SAMPLE_END)
-        ]
-        cat_pp = cat_data[cat_data["month"] > OUT_SAMPLE_END]
+        is_parts = []
+        pp_parts = []
+        for factor_name in cat_data["factor_name"].unique():
+            if factor_name not in FACTOR_PUBLICATION_INFO:
+                continue
+            fdata = cat_data[cat_data["factor_name"] == factor_name]
+            data_start, is_end, oos_end = _get_periods(factor_name)
+            is_parts.append(fdata[(fdata["month"] >= data_start) & (fdata["month"] <= is_end)])
+            pp_parts.append(fdata[fdata["month"] > oos_end])
+
+        cat_is = pd.concat(is_parts) if is_parts else pd.DataFrame()
+        cat_pp = pd.concat(pp_parts) if pp_parts else pd.DataFrame()
 
         is_mean = cat_is["ls_return_pct"].mean() if len(cat_is) > 0 else np.nan
         pp_mean = cat_pp["ls_return_pct"].mean() if len(cat_pp) > 0 else np.nan
@@ -304,7 +346,6 @@ def table4_by_predictor_type():
     output_path = os.path.join(OUTPUT_DIR, "table4_by_predictor_type.csv")
     df_result.to_csv(output_path, index=False, float_format="%.4f")
     return df_result
-
 
 def table5_arbitrage_costs():
     panel = pd.read_parquet(os.path.join(PROCESSED_DIR, "all_factors.parquet"))
@@ -340,8 +381,12 @@ def table5_arbitrage_costs():
         avg_mkt_cap = extreme["mkt_cap_total"].mean()
 
         sub = port_ret[port_ret["factor_name"] == factor_name]
-        in_sample = sub[(sub["month"] >= IN_SAMPLE_START) & (sub["month"] <= IN_SAMPLE_END)]
-        post_pub = sub[sub["month"] > OUT_SAMPLE_END]
+
+        if factor_name not in FACTOR_PUBLICATION_INFO:
+            continue
+        data_start, is_end, oos_end = _get_periods(factor_name)
+        in_sample = sub[(sub["month"] >= data_start) & (sub["month"] <= is_end)]
+        post_pub = sub[sub["month"] > oos_end]
 
         if len(in_sample) < 12 or len(post_pub) < 12:
             continue
@@ -369,15 +414,12 @@ def table5_arbitrage_costs():
     df_arb.to_csv(output_path, index=False, float_format="%.4f")
     return df_arb
 
-
 def run_all():
     table1_summary_statistics()
     table2_main_regression()
     table3_cross_sectional_decay()
     table4_by_predictor_type()
     table5_arbitrage_costs()
-
-
 
 if __name__ == "__main__":
     run_all()

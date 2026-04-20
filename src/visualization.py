@@ -17,8 +17,17 @@ PROCESSED_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "processed
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-IN_SAMPLE_END = "2010-12-31"
-OUT_SAMPLE_END = "2015-12-31"
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
+from portfolio import FACTOR_PUBLICATION_INFO
+
+DATA_START = "1991-01-01"
+
+def _get_periods(factor_name):
+    sample_end_year, pub_year = FACTOR_PUBLICATION_INFO[factor_name]
+    in_sample_end = f"{max(sample_end_year, 1990)}-12-31"
+    out_sample_end = f"{pub_year}-12-31"
+    return DATA_START, in_sample_end, out_sample_end
 
 FACTOR_LABELS = {
     "size": "Size",
@@ -65,12 +74,14 @@ def figure1_cumulative_returns():
         ax = axes[plot_idx]
         ax.plot(sub["month"], sub["cum_return"] * 100, linewidth=1.2, color="#2166ac")
 
-        for date, label, color in [
-            (pd.Timestamp(IN_SAMPLE_END), "End of Sample", "#d73027"),
-            (pd.Timestamp(OUT_SAMPLE_END), "Publication", "#fc8d59"),
-        ]:
-            if sub["month"].min() < date < sub["month"].max():
-                ax.axvline(x=date, color=color, linestyle="--", alpha=0.7, linewidth=1)
+        if factor_name in FACTOR_PUBLICATION_INFO:
+            _, is_end, oos_end = _get_periods(factor_name)
+            for date, label, color in [
+                (pd.Timestamp(is_end), "End of Sample", "#d73027"),
+                (pd.Timestamp(oos_end), "Publication", "#fc8d59"),
+            ]:
+                if sub["month"].min() < date < sub["month"].max():
+                    ax.axvline(x=date, color=color, linestyle="--", alpha=0.7, linewidth=1)
 
         ax.set_title(FACTOR_LABELS.get(factor_name, factor_name), fontsize=12, fontweight="bold")
         ax.set_ylabel("Cumulative Return (%)", fontsize=9)
@@ -95,17 +106,14 @@ def figure1_cumulative_returns():
 def figure2_return_comparison():
     port_ret = load_portfolio_returns()
 
-    periods = {
-        "In-Sample\n(2000-2010)": ("2000-01-01", IN_SAMPLE_END),
-        "Out-of-Sample\n(2011-2015)": ("2011-01-01", OUT_SAMPLE_END),
-        "Post-Publication\n(2016-2026)": ("2016-01-01", "2026-12-31"),
-    }
-
     valid_factors = []
     for factor_name in port_ret["factor_name"].unique():
+        if factor_name not in FACTOR_PUBLICATION_INFO:
+            continue
         sub = port_ret[port_ret["factor_name"] == factor_name]
-        in_sample = sub[(sub["month"] >= "2000-01-01") & (sub["month"] <= IN_SAMPLE_END)]
-        if len(in_sample) >= 24:
+        data_start, is_end, _ = _get_periods(factor_name)
+        in_sample = sub[(sub["month"] >= data_start) & (sub["month"] <= is_end)]
+        if len(in_sample) >= 12:
             valid_factors.append(factor_name)
 
     factor_labels = [FACTOR_LABELS.get(f, f) for f in sorted(valid_factors)]
@@ -115,22 +123,31 @@ def figure2_return_comparison():
     fig, ax = plt.subplots(figsize=(14, 7))
 
     colors = ["#2166ac", "#fc8d59", "#d73027"]
-    for i, (period_name, (start, end)) in enumerate(periods.items()):
+    period_names = ["In-Sample", "Out-of-Sample", "Post-Publication"]
+    for period_idx in range(3):
         means = []
         for factor_name in sorted(valid_factors):
-            sub = port_ret[
-                (port_ret["factor_name"] == factor_name)
-                & (port_ret["month"] >= start)
-                & (port_ret["month"] <= end)
-            ]
-            means.append(sub["ls_return"].mean() * 100 if len(sub) > 0 else 0)
+            data_start, is_end, oos_end = _get_periods(factor_name)
+            sample_end_year, pub_year = FACTOR_PUBLICATION_INFO[factor_name]
+            sub = port_ret[port_ret["factor_name"] == factor_name]
 
-        ax.bar(x_positions + i * bar_width, means, bar_width,
-               label=period_name, color=colors[i], alpha=0.85, edgecolor="white")
+            if period_idx == 0:
+                period_data = sub[(sub["month"] >= data_start) & (sub["month"] <= is_end)]
+            elif period_idx == 1:
+                oos_start = f"{max(sample_end_year, 1991) + 1}-01-01"
+                period_data = sub[(sub["month"] >= oos_start) & (sub["month"] <= oos_end)]
+            else:
+                pp_start = f"{pub_year + 1}-01-01"
+                period_data = sub[sub["month"] >= pp_start]
+
+            means.append(period_data["ls_return"].mean() * 100 if len(period_data) > 0 else 0)
+
+        ax.bar(x_positions + period_idx * bar_width, means, bar_width,
+               label=period_names[period_idx], color=colors[period_idx], alpha=0.85, edgecolor="white")
 
     ax.set_xlabel("Factor", fontsize=12)
     ax.set_ylabel("Average Monthly L/S Return (%)", fontsize=12)
-    ax.set_title("Figure 2: Average Monthly Long-Short Returns by Period\n(China A-Shares)",
+    ax.set_title("Figure 2: Average Monthly Long-Short Returns by Period\n(China A-Shares, per-factor publication dates)",
                  fontsize=14, fontweight="bold")
     ax.set_xticks(x_positions + bar_width)
     ax.set_xticklabels(factor_labels, rotation=30, ha="right", fontsize=10)
@@ -151,9 +168,13 @@ def figure3_decay_scatter():
 
     factor_stats = []
     for factor_name in port_ret["factor_name"].unique():
+        if factor_name not in FACTOR_PUBLICATION_INFO:
+            continue
         sub = port_ret[port_ret["factor_name"] == factor_name]
-        in_sample = sub[(sub["month"] >= "2000-01-01") & (sub["month"] <= IN_SAMPLE_END)]
-        post_pub = sub[sub["month"] > OUT_SAMPLE_END]
+        data_start, is_end, oos_end = _get_periods(factor_name)
+
+        in_sample = sub[(sub["month"] >= data_start) & (sub["month"] <= is_end)]
+        post_pub = sub[sub["month"] > oos_end]
 
         if len(in_sample) < 12 or len(post_pub) < 12:
             continue
@@ -216,9 +237,9 @@ def figure4_decay_by_type():
     bar_width = 0.35
 
     ax.bar(x_positions - bar_width / 2, table4["IS_Mean(%)"], bar_width,
-           label="In-Sample (2000-2010)", color="#2166ac", alpha=0.85, edgecolor="white")
+           label="In-Sample", color="#2166ac", alpha=0.85, edgecolor="white")
     ax.bar(x_positions + bar_width / 2, table4["PP_Mean(%)"], bar_width,
-           label="Post-Publication (2016-2026)", color="#d73027", alpha=0.85, edgecolor="white")
+           label="Post-Publication", color="#d73027", alpha=0.85, edgecolor="white")
 
     ax.set_xlabel("Predictor Type", fontsize=12)
     ax.set_ylabel("Average Monthly L/S Return (%)", fontsize=12)
