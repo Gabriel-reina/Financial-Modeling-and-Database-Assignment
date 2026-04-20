@@ -1,0 +1,10 @@
+factor,category,in_sample_mean,in_sample_t,post_pub_mean,decay,decay_pct
+accruals_ratio,Fundamental,-0.6048,-3.4718,-0.1983,0.4064,-67.2027
+asset_growth,Fundamental,-0.6811,-1.8359,-1.1093,-0.4282,62.8744
+bm,Valuation,-3.4670,-8.2399,-3.2538,0.2132,-6.1493
+leverage,Fundamental,0.0018,0.0070,0.0415,0.0396,2196.3378
+momentum,Market,-0.8759,-1.6024,-0.3132,0.5627,-64.2396
+reversal,Market,1.3428,3.2965,0.7394,-0.6034,-44.9365
+roa,Fundamental,1.6214,3.1078,1.1978,-0.4236,-26.1260
+seo_indicator,Event,-0.7046,-1.7346,0.2876,0.9922,-140.8206
+size,Market,-2.3123,-4.1102,-2.8766,-0.5643,24.4022
