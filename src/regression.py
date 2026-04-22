@@ -234,6 +234,10 @@ def _clustered_se(df, X, residuals, coef_indices, cluster_col="month"):
 
 
 def table3_cross_sectional_decay():
+    """
+    Table III: Cross-Sectional Decay by Factor
+    Shows the decay pattern from In-Sample → Out-of-Sample → Post-Publication
+    """
     port_ret = load_portfolio_returns()
     port_ret["month"] = pd.to_datetime(port_ret["month"])
 
@@ -246,46 +250,96 @@ def table3_cross_sectional_decay():
         sample_end_year, pub_year = FACTOR_PUBLICATION_INFO[factor_name]
 
         in_sample = sub[(sub["month"] >= data_start) & (sub["month"] <= is_end)]
+        out_sample = sub[(sub["month"] > is_end) & (sub["month"] <= oos_end)]
         post_pub = sub[sub["month"] > oos_end]
 
-        if len(in_sample) < 12 or len(post_pub) < 12:
-            continue
+        # Calculate statistics for each period
+        is_mean = in_sample["ls_return"].mean() * 100 if len(in_sample) > 0 else np.nan
+        is_std = in_sample["ls_return"].std() * 100 if len(in_sample) > 0 else np.nan
+        is_t = is_mean / (is_std / np.sqrt(len(in_sample))) if is_std > 0 and len(in_sample) > 0 else np.nan
+        is_n = len(in_sample)
 
-        is_mean = in_sample["ls_return"].mean() * 100
-        is_std = in_sample["ls_return"].std() * 100
-        is_t = is_mean / (is_std / np.sqrt(len(in_sample))) if is_std > 0 else 0
-        pp_mean = post_pub["ls_return"].mean() * 100
+        oos_mean = out_sample["ls_return"].mean() * 100 if len(out_sample) > 0 else np.nan
+        oos_std = out_sample["ls_return"].std() * 100 if len(out_sample) > 0 else np.nan
+        oos_t = oos_mean / (oos_std / np.sqrt(len(out_sample))) if oos_std > 0 and len(out_sample) > 0 else np.nan
+        oos_n = len(out_sample)
 
-        decay = pp_mean - is_mean
-        decay_pct = decay / is_mean * 100 if is_mean != 0 else np.nan
+        pp_mean = post_pub["ls_return"].mean() * 100 if len(post_pub) > 0 else np.nan
+        pp_std = post_pub["ls_return"].std() * 100 if len(post_pub) > 0 else np.nan
+        pp_t = pp_mean / (pp_std / np.sqrt(len(post_pub))) if pp_std > 0 and len(post_pub) > 0 else np.nan
+        pp_n = len(post_pub)
+
+        # Calculate decay from IS to OOS and IS to PP
+        decay_is_to_oos = oos_mean - is_mean if not np.isnan(is_mean) and not np.isnan(oos_mean) else np.nan
+        decay_is_to_oos_pct = decay_is_to_oos / is_mean * 100 if not np.isnan(is_mean) and is_mean != 0 else np.nan
+
+        decay_is_to_pp = pp_mean - is_mean if not np.isnan(is_mean) and not np.isnan(pp_mean) else np.nan
+        decay_is_to_pp_pct = decay_is_to_pp / is_mean * 100 if not np.isnan(is_mean) and is_mean != 0 else np.nan
+
+        # Calculate decay from OOS to PP
+        decay_oos_to_pp = pp_mean - oos_mean if not np.isnan(oos_mean) and not np.isnan(pp_mean) else np.nan
+        decay_oos_to_pp_pct = decay_oos_to_pp / oos_mean * 100 if not np.isnan(oos_mean) and oos_mean != 0 else np.nan
 
         factor_stats.append({
             "factor": factor_name,
             "category": FACTOR_CATEGORIES.get(factor_name, "Other"),
             "sample_end_year": sample_end_year,
             "pub_year": pub_year,
-            "in_sample_mean": is_mean,
-            "in_sample_t": is_t,
-            "post_pub_mean": pp_mean,
-            "decay": decay,
-            "decay_pct": decay_pct,
+            # In-Sample statistics
+            "is_mean": is_mean,
+            "is_std": is_std,
+            "is_t": is_t,
+            "is_n": is_n,
+            # Out-of-Sample statistics
+            "oos_mean": oos_mean,
+            "oos_std": oos_std,
+            "oos_t": oos_t,
+            "oos_n": oos_n,
+            # Post-Publication statistics
+            "pp_mean": pp_mean,
+            "pp_std": pp_std,
+            "pp_t": pp_t,
+            "pp_n": pp_n,
+            # Decay measures
+            "decay_is_to_oos": decay_is_to_oos,
+            "decay_is_to_oos_pct": decay_is_to_oos_pct,
+            "decay_is_to_pp": decay_is_to_pp,
+            "decay_is_to_pp_pct": decay_is_to_pp_pct,
+            "decay_oos_to_pp": decay_oos_to_pp,
+            "decay_oos_to_pp_pct": decay_oos_to_pp_pct,
         })
 
     df_stats = pd.DataFrame(factor_stats)
 
-    if len(df_stats) >= 3:
+    # Cross-sectional regression: decay vs. in-sample strength
+    # Only include factors with valid IS and PP data
+    valid_for_regression = df_stats[
+        (df_stats["is_n"] >= 12) & 
+        (df_stats["pp_n"] >= 12) & 
+        (df_stats["is_mean"].notna()) & 
+        (df_stats["decay_is_to_pp"].notna())
+    ]
+
+    if len(valid_for_regression) >= 2:
         slope, intercept, r_value, p_value, std_err = stats.linregress(
-            df_stats["in_sample_mean"], df_stats["decay"]
+            valid_for_regression["is_mean"], valid_for_regression["decay_is_to_pp"]
         )
         slope_t, intercept_t, r_t, p_t, se_t = stats.linregress(
-            df_stats["in_sample_t"], df_stats["decay"]
+            valid_for_regression["is_t"], valid_for_regression["decay_is_to_pp"]
         )
+    else:
+        slope = intercept = r_value = p_value = std_err = np.nan
+        slope_t = intercept_t = r_t = p_t = se_t = np.nan
 
     output_path = os.path.join(OUTPUT_DIR, "table3_cross_sectional_decay.csv")
     df_stats.to_csv(output_path, index=False, float_format="%.4f")
     return df_stats
 
 def table4_by_predictor_type():
+    """
+    Table IV: Decay by Predictor Type
+    Shows the decay pattern across different factor categories
+    """
     port_ret = load_portfolio_returns()
     port_ret["month"] = pd.to_datetime(port_ret["month"])
     port_ret["category"] = port_ret["factor_name"].map(FACTOR_CATEGORIES)
@@ -299,6 +353,7 @@ def table4_by_predictor_type():
             continue
 
         is_parts = []
+        oos_parts = []
         pp_parts = []
         for factor_name in cat_data["factor_name"].unique():
             if factor_name not in FACTOR_PUBLICATION_INFO:
@@ -306,14 +361,20 @@ def table4_by_predictor_type():
             fdata = cat_data[cat_data["factor_name"] == factor_name]
             data_start, is_end, oos_end = _get_periods(factor_name)
             is_parts.append(fdata[(fdata["month"] >= data_start) & (fdata["month"] <= is_end)])
+            oos_parts.append(fdata[(fdata["month"] > is_end) & (fdata["month"] <= oos_end)])
             pp_parts.append(fdata[fdata["month"] > oos_end])
 
         cat_is = pd.concat(is_parts) if is_parts else pd.DataFrame()
+        cat_oos = pd.concat(oos_parts) if oos_parts else pd.DataFrame()
         cat_pp = pd.concat(pp_parts) if pp_parts else pd.DataFrame()
 
         is_mean = cat_is["ls_return_pct"].mean() if len(cat_is) > 0 else np.nan
+        oos_mean = cat_oos["ls_return_pct"].mean() if len(cat_oos) > 0 else np.nan
         pp_mean = cat_pp["ls_return_pct"].mean() if len(cat_pp) > 0 else np.nan
-        decay = pp_mean - is_mean
+
+        decay_is_to_oos = oos_mean - is_mean if not np.isnan(is_mean) and not np.isnan(oos_mean) else np.nan
+        decay_is_to_pp = pp_mean - is_mean if not np.isnan(is_mean) and not np.isnan(pp_mean) else np.nan
+        decay_oos_to_pp = pp_mean - oos_mean if not np.isnan(oos_mean) and not np.isnan(pp_mean) else np.nan
 
         n_factors = cat_data["factor_name"].nunique()
 
@@ -321,10 +382,14 @@ def table4_by_predictor_type():
             "Category": category,
             "N_Factors": n_factors,
             "IS_Mean(%)": is_mean,
+            "IS_N_Months": len(cat_is),
+            "OOS_Mean(%)": oos_mean,
+            "OOS_N_Months": len(cat_oos),
             "PP_Mean(%)": pp_mean,
-            "Decay(%)": decay,
-            "N_months_IS": len(cat_is),
-            "N_months_PP": len(cat_pp),
+            "PP_N_Months": len(cat_pp),
+            "Decay_IS_to_OOS(%)": decay_is_to_oos,
+            "Decay_IS_to_PP(%)": decay_is_to_pp,
+            "Decay_OOS_to_PP(%)": decay_oos_to_pp,
         })
 
     df_result = pd.DataFrame(results)
@@ -334,6 +399,10 @@ def table4_by_predictor_type():
     return df_result
 
 def table5_arbitrage_costs():
+    """
+    Table V: Arbitrage Costs and Decay
+    Examines the relationship between arbitrage costs and return decay
+    """
     panel = pd.read_parquet(os.path.join(PROCESSED_DIR, "all_factors.parquet"))
     port_ret = load_portfolio_returns()
     port_ret["month"] = pd.to_datetime(port_ret["month"])
@@ -372,29 +441,48 @@ def table5_arbitrage_costs():
             continue
         data_start, is_end, oos_end = _get_periods(factor_name)
         in_sample = sub[(sub["month"] >= data_start) & (sub["month"] <= is_end)]
+        out_sample = sub[(sub["month"] > is_end) & (sub["month"] <= oos_end)]
         post_pub = sub[sub["month"] > oos_end]
 
-        if len(in_sample) < 12 or len(post_pub) < 12:
-            continue
+        # Calculate statistics for each period
+        is_mean = in_sample["ls_return"].mean() * 100 if len(in_sample) > 0 else np.nan
+        oos_mean = out_sample["ls_return"].mean() * 100 if len(out_sample) > 0 else np.nan
+        pp_mean = post_pub["ls_return"].mean() * 100 if len(post_pub) > 0 else np.nan
 
-        is_mean = in_sample["ls_return"].mean() * 100
-        pp_mean = post_pub["ls_return"].mean() * 100
-        decay = pp_mean - is_mean
+        # Calculate decay measures
+        decay_is_to_oos = oos_mean - is_mean if not np.isnan(is_mean) and not np.isnan(oos_mean) else np.nan
+        decay_is_to_pp = pp_mean - is_mean if not np.isnan(is_mean) and not np.isnan(pp_mean) else np.nan
+        decay_oos_to_pp = pp_mean - oos_mean if not np.isnan(oos_mean) and not np.isnan(pp_mean) else np.nan
 
         factor_arb_costs.append({
             "factor": factor_name,
             "avg_size_rank": avg_size_rank,
             "avg_mkt_cap_billion": avg_mkt_cap / 1e6,
             "is_mean": is_mean,
+            "is_n": len(in_sample),
+            "oos_mean": oos_mean,
+            "oos_n": len(out_sample),
             "pp_mean": pp_mean,
-            "decay": decay,
+            "pp_n": len(post_pub),
+            "decay_is_to_oos": decay_is_to_oos,
+            "decay_is_to_pp": decay_is_to_pp,
+            "decay_oos_to_pp": decay_oos_to_pp,
         })
 
     df_arb = pd.DataFrame(factor_arb_costs)
 
-    if len(df_arb) >= 3:
+    # Cross-sectional regression: decay vs. arbitrage costs (size rank)
+    # Only include factors with valid IS and PP data
+    valid_for_regression = df_arb[
+        (df_arb["is_n"] >= 12) & 
+        (df_arb["pp_n"] >= 12) & 
+        (df_arb["is_mean"].notna()) & 
+        (df_arb["decay_is_to_pp"].notna())
+    ]
+
+    if len(valid_for_regression) >= 2:
         slope, intercept, r_value, p_value, std_err = stats.linregress(
-            df_arb["avg_size_rank"], df_arb["decay"]
+            valid_for_regression["avg_size_rank"], valid_for_regression["decay_is_to_pp"]
         )
     output_path = os.path.join(OUTPUT_DIR, "table5_arbitrage_costs.csv")
     df_arb.to_csv(output_path, index=False, float_format="%.4f")

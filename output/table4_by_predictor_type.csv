@@ -1,5 +1,5 @@
-Category,N_Factors,IS_Mean(%),PP_Mean(%),Decay(%),N_months_IS,N_months_PP
-Market,5,,-1.1514,,0,1277
-Fundamental,4,-1.1225,0.1475,1.2701,116,1283
-Valuation,1,,-4.1590,,0,390
-Event,1,,-0.2482,,0,322
+Category,N_Factors,IS_Mean(%),IS_N_Months,OOS_Mean(%),OOS_N_Months,PP_Mean(%),PP_N_Months,Decay_IS_to_OOS(%),Decay_IS_to_PP(%),Decay_OOS_to_PP(%)
+Market,5,,0,,0,-1.1514,1277,,,
+Fundamental,4,-1.1225,116,0.2378,92,0.1475,1283,1.3603,1.2701,-0.0902
+Valuation,1,,0,,0,-4.1590,390,,,
+Event,1,,0,,0,-0.2482,322,,,

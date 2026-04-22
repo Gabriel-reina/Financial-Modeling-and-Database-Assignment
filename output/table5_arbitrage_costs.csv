@@ -1,2 +1,12 @@
-factor,avg_size_rank,avg_mkt_cap_billion,is_mean,pp_mean,decay
-asset_growth,0.4905,11.0817,-1.1225,-1.0000,0.1225
+factor,avg_size_rank,avg_mkt_cap_billion,is_mean,is_n,oos_mean,oos_n,pp_mean,pp_n,decay_is_to_oos,decay_is_to_pp,decay_oos_to_pp
+accruals_ratio,0.4823,10.8900,,0,,0,-0.3885,335,,,
+asset_growth,0.4905,11.0817,-1.1225,116,-0.9045,60,-1.0000,207,0.2181,0.1225,-0.0956
+bm,0.5495,16.1410,,0,,0,-4.1590,390,,,
+idiovol,0.4739,12.1242,,0,,0,-10.9747,60,,,
+leverage,0.4887,11.5484,,0,,0,0.1298,390,,,
+momentum,0.5447,14.4330,,0,,0,-0.6557,379,,,
+reversal,0.5234,12.9756,,0,,0,1.1986,389,,,
+roa,0.5137,13.7470,,0,2.3794,32,1.3557,351,,,-1.0237
+seo_indicator,0.6296,16.8586,,0,,0,-0.2482,322,,,
+size,0.5002,21.3438,,0,,0,-2.3204,390,,,
+turnover,0.5454,23.5775,,0,,0,-2.1131,59,,,

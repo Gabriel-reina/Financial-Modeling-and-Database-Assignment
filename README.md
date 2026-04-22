@@ -108,33 +108,36 @@ Since China's A-share data begins in 1991, most factors' original sample periods
 
 ### Table I: Summary Statistics
 
-Because most factors were published before our Chinese data begins (1991), the majority of factors have data only in the post-publication period. Only Asset Growth has all three periods. ROA has out-of-sample (32 months, mean = +2.38%, t = 1.78) and post-publication data, but no in-sample data.
+This table shows the average monthly long-short returns across all three periods (In-Sample, Out-of-Sample, Post-Publication) for each factor.
 
-Average monthly long-short returns (%) in the post-publication period:
+| Factor | Category | Pub Year | IS Mean (%) | IS N | OOS Mean (%) | OOS N | PP Mean (%) | PP N |
+|--------|----------|----------|-------------|------|--------------|-------|-------------|------|
+| Asset Growth | Fundamental | 2008 | −1.12 | 116 | −0.90 | 60 | −1.00 | 207 |
+| ROA | Fundamental | 1996 | — | 0 | +2.38 | 32 | +1.36 | 351 |
+| Reversal | Market | 1990 | — | 0 | — | 0 | +1.20 | 389 |
+| Leverage | Fundamental | 1988 | — | 0 | — | 0 | +0.13 | 390 |
+| SEO | Event | 1995 | — | 0 | — | 0 | −0.25 | 322 |
+| Accruals | Fundamental | 1996 | — | 0 | — | 0 | −0.39 | 335 |
+| Momentum | Market | 1993 | — | 0 | — | 0 | −0.66 | 379 |
+| Turnover | Market | 1998 | — | 0 | — | 0 | −2.11 | 59 |
+| Size | Market | 1981 | — | 0 | — | 0 | −2.32 | 390 |
+| B/M | Valuation | 1992 | — | 0 | — | 0 | −4.16 | 390 |
+| Idio. Vol. | Market | 2006 | — | 0 | — | 0 | −10.97 | 60 |
 
-| Factor | Category | Pub Year | Post-Pub Mean (%) | t-stat | N months |
-|--------|----------|----------|-------------------|--------|----------|
-| Reversal | Market | 1990 | +1.20 | 3.84 | 389 |
-| ROA | Fundamental | 1996 | +1.36 | 5.01 | 351 |
-| Leverage | Fundamental | 1988 | +0.13 | 0.74 | 390 |
-| SEO | Event | 1995 | −0.25 | −1.31 | 322 |
-| Accruals | Fundamental | 1996 | −0.39 | −3.74 | 335 |
-| Momentum | Market | 1993 | −0.66 | −2.24 | 379 |
-| Asset Growth | Fundamental | 2008 | −1.00 | −4.39 | 207 |
-| Turnover | Market | 1998 | −2.11 | −3.30 | 59 |
-| Size | Market | 1981 | −2.32 | −7.83 | 390 |
-| B/M | Valuation | 1992 | −4.16 | −12.21 | 390 |
-| Idio. Vol. | Market | 2006 | −10.97 | −15.33 | 60 |
-
-For Asset Growth (the only factor with in-sample data): IS mean = −1.12%, OOS mean = −0.90%, PP mean = −1.00%, showing minimal decay (−10.9%).
-
-For ROA: OOS mean = +2.38% (t = 1.78, 32 months), PP mean = +1.36% (t = 5.01, 351 months). The decline from OOS to PP suggests some post-publication weakening, though the OOS period is short.
+**Key observations:**
+- **Asset Growth** is the only factor with complete IS → OOS → PP data. The returns are: IS = −1.12%, OOS = −0.90%, PP = −1.00%. The decay from IS to PP is only −10.9%, suggesting minimal post-publication weakening.
+- **ROA** has OOS and PP data but no IS data. The decline from OOS (+2.38%) to PP (+1.36%) is notable, but the OOS period is short (32 months).
+- All other factors have data only in the post-publication period because their original papers were published before Chinese market data begins (1991).
 
 ### Table II: Panel Regression
 
 We estimate the panel regression with predictor fixed effects, where period dummies are assigned per-factor based on each factor's real publication date:
 
 $$R_{i,t} = \alpha_i + \beta_1 \cdot \text{PostSample}_{i,t} + \beta_2 \cdot \text{PostPublication}_{i,t} + \varepsilon_{i,t}$$
+
+Where:
+- **PostSample** = 1 for Out-of-Sample period (after original sample ends, before publication)
+- **PostPublication** = 1 for Post-Publication period (after publication date)
 
 Since only Asset Growth has all three periods in the Chinese data, the regression is effectively based on one factor:
 
@@ -143,21 +146,58 @@ Since only Asset Growth has all three periods in the Chinese data, the regressio
 | Post-Sample (β₁) | +0.218 | 0.852 | 0.26 |
 | Post-Publication (β₂) | +0.122 | 0.526 | 0.23 |
 
-Neither coefficient is statistically significant, suggesting no meaningful decay for Asset Growth in China.
+**Interpretation:**
+- **β₁ (Post-Sample)**: The coefficient is positive (+0.218%) but not statistically significant (t = 0.26). This suggests no significant decay from IS to OOS period.
+- **β₂ (Post-Publication)**: The coefficient is also positive (+0.122%) and not statistically significant (t = 0.23). This suggests no significant decay from IS to PP period.
+
+Neither coefficient is statistically significant, suggesting **no meaningful post-publication decay** for Asset Growth in China. This contrasts with the US results where McLean & Pontiff (2016) found significant negative coefficients.
 
 ### Table III: Cross-Sectional Decay by Factor
 
-Only factors with ≥12 months of both in-sample and post-publication data are included. In our Chinese sample, only Asset Growth qualifies:
+This table shows the complete decay pattern from In-Sample → Out-of-Sample → Post-Publication for each factor.
 
-| Factor | IS Mean (%) | PP Mean (%) | Decay (pp) | Decay (%) |
-|--------|-------------|-------------|------------|-----------|
-| Asset Growth | −1.12 | −1.00 | +0.12 | −10.9% |
+| Factor | IS Mean (%) | IS N | OOS Mean (%) | OOS N | PP Mean (%) | PP N | Decay IS→OOS (%) | Decay IS→PP (%) | Decay OOS→PP (%) |
+|--------|-------------|------|--------------|-------|-------------|------|------------------|-----------------|------------------|
+| Asset Growth | −1.12 | 116 | −0.90 | 60 | −1.00 | 207 | −19.4% | −10.9% | +10.6% |
+| ROA | — | 0 | +2.38 | 32 | +1.36 | 351 | — | — | −43.0% |
 
-The limited cross-sectional variation (only one factor) prevents meaningful cross-sectional analysis of decay patterns.
+**Key findings:**
+- **Asset Growth** is the only factor with complete IS → OOS → PP data. The decay from IS to OOS is −19.4%, but from OOS to PP it actually increases by +10.6%, suggesting no systematic post-publication decay.
+- **ROA** has OOS and PP data but no IS data. The decline from OOS (+2.38%) to PP (+1.36%) is −43.0%, but this is based on only 32 months of OOS data.
+- Other factors have no IS or OOS data because their original papers were published before Chinese market data begins (1991).
 
-### Key Insight
+The limited cross-sectional variation (only one factor with complete data) prevents meaningful cross-sectional analysis of decay patterns.
 
-The most important finding is structural: **most US-discovered anomalies were already published before Chinese market data begins**, so the entire Chinese sample is post-publication. This means we cannot directly replicate the in-sample vs. post-publication comparison for most factors. Instead, the Chinese data primarily tells us about the **long-run persistence** of these anomalies in a different market environment.
+### Key Insights
+
+1. **Structural limitation**: Most US-discovered anomalies were already published before Chinese market data begins (1991), so the entire Chinese sample is post-publication for most factors. This fundamentally limits our ability to directly replicate the IS vs. PP comparison.
+
+2. **Asset Growth factor behaves differently in China**: For Asset Growth (the only factor with complete IS → OOS → PP data), we find:
+   - **IS Mean**: −1.12% (negative, opposite to US +0.58%)
+   - **OOS Mean**: −0.90%
+   - **PP Mean**: −1.00%
+   - **IS → OOS change**: +19.4% (returns increase, not decay)
+   - **OOS → PP change**: +10.6% (returns increase, not decay)
+   - **Overall IS → PP change**: +10.9% (returns increase, not decay)
+
+3. **Contrast with US results**: McLean & Pontiff (2016) found:
+   - US IS Mean: +0.582%, OOS Mean: +0.402%, PP Mean: +0.264%
+   - US IS → PP decay: −58% (significant decline)
+   - US Panel regression β₂: −0.337% (t = −3.74, significant)
+
+   In China, we find:
+   - China IS Mean: −1.12%, OOS Mean: −0.90%, PP Mean: −1.00%
+   - China IS → PP change: +10.9% (returns increase, not decay)
+   - China Panel regression β₂: +0.122% (t = 0.23, not significant)
+
+4. **Interpretation**: The opposite sign and lack of decay suggest that:
+   - **Asset Growth anomaly works differently in China**: The factor produces negative returns in China, opposite to the positive returns in the US.
+   - **Academic publication has weaker effect in China**: Unlike the US where publication leads to significant decay, Chinese returns do not decay post-publication.
+   - **Possible explanations**:
+     - **Retail-dominated market**: China's A-share market is dominated by retail investors (~80% of trading volume), who are less likely to read academic papers and trade on published anomalies.
+     - **Short-selling constraints**: China introduced short-selling only in 2010, and the eligible stock list remains limited. Many anomalies require shorting to exploit.
+     - **Different market structure**: China's market has different institutional features (state-owned enterprises, policy interventions) that may affect factor returns differently.
+     - **Information asymmetry**: Academic research may take longer to diffuse to Chinese investors compared to US investors.
 
 ## Comparison with McLean & Pontiff (2016) US Results
 
@@ -165,10 +205,16 @@ The most important finding is structural: **most US-discovered anomalies were al
 |-----------|--------------------|--------------------|
 | **Number of predictors** | 97 | 12 |
 | **Data period** | 1926–2013 | 1991–2026 |
-| **Factors with IS+PP data** | 97 (all) | 1 (Asset Growth); ROA has OOS+PP |
+| **Factors with IS+OOS+PP data** | 97 (all) | 1 (Asset Growth) |
+| **Factors with OOS+PP data** | 97 (all) | 2 (Asset Growth, ROA) |
 | **Average IS return** | ~0.45% per month | −1.12% (Asset Growth) |
-| **Post-publication decay** | ~32% decline | −10.9% (Asset Growth) |
-| **Panel regression β₂** | Significantly negative (−0.32, t≈−3) | Insignificant (+0.12, t=0.23) |
+| **Average OOS return** | ~0.30% per month | −0.90% (Asset Growth), +2.38% (ROA) |
+| **Average PP return** | ~0.30% per month | −1.00% (Asset Growth), +1.36% (ROA) |
+| **IS→OOS decay** | ~30% decline | −19.4% (Asset Growth) |
+| **IS→PP decay** | ~32% decline | −10.9% (Asset Growth) |
+| **OOS→PP decay** | ~10% decline | +10.6% (Asset Growth), −43.0% (ROA) |
+| **Panel regression β₁ (OOS)** | Significantly negative | Insignificant (+0.22, t=0.26) |
+| **Panel regression β₂ (PP)** | Significantly negative (−0.32, t≈−3) | Insignificant (+0.12, t=0.23) |
 
 ### Why the Differences?
 

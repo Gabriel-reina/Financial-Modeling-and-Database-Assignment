@@ -1,2 +1,12 @@
-factor,category,sample_end_year,pub_year,in_sample_mean,in_sample_t,post_pub_mean,decay,decay_pct
-asset_growth,Fundamental,2003,2008,-1.1225,-2.3667,-1.0000,0.1225,-10.9096
+factor,category,sample_end_year,pub_year,is_mean,is_std,is_t,is_n,oos_mean,oos_std,oos_t,oos_n,pp_mean,pp_std,pp_t,pp_n,decay_is_to_oos,decay_is_to_oos_pct,decay_is_to_pp,decay_is_to_pp_pct,decay_oos_to_pp,decay_oos_to_pp_pct
+accruals_ratio,Fundamental,1991,1996,,,,0,,,,0,-0.3885,1.9008,-3.7409,335,,,,,,
+asset_growth,Fundamental,2003,2008,-1.1225,5.1083,-2.3667,116,-0.9045,5.5059,-1.2724,60,-1.0000,3.2789,-4.3881,207,0.2181,-19.4254,0.1225,-10.9096,-0.0956,10.5689
+bm,Valuation,1990,1992,,,,0,,,,0,-4.1590,6.7263,-12.2107,390,,,,,,
+idiovol,Market,2000,2006,,,,0,,,,0,-10.9747,5.5443,-15.3329,60,,,,,,
+leverage,Fundamental,1981,1988,,,,0,,,,0,0.1298,3.4406,0.7448,390,,,,,,
+momentum,Market,1989,1993,,,,0,,,,0,-0.6557,5.7074,-2.2366,379,,,,,,
+reversal,Market,1987,1990,,,,0,,,,0,1.1986,6.1511,3.8434,389,,,,,,
+roa,Fundamental,1993,1996,,,,0,2.3794,7.5771,1.7764,32,1.3557,5.0739,5.0058,351,,,,,-1.0237,-43.0241
+seo_indicator,Event,1984,1995,,,,0,,,,0,-0.2482,3.3909,-1.3136,322,,,,,,
+size,Market,1975,1981,,,,0,,,,0,-2.3204,5.8514,-7.8313,390,,,,,,
+turnover,Market,1991,1998,,,,0,,,,0,-2.1131,4.9195,-3.2994,59,,,,,,
