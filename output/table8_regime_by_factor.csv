@@ -1,0 +1,12 @@
+factor,category,pre_pub_bull_mean,pre_pub_bull_n,pre_pub_bear_mean,pre_pub_bear_n,post_pub_bull_mean,post_pub_bull_n,post_pub_bear_mean,post_pub_bear_n,decay_bull,decay_bear
+accruals_ratio,Fundamental,,0,,0,-0.3613,218,-0.4392,117,,
+asset_growth,Fundamental,-0.9116,111,-1.2814,65,-0.9715,149,-1.0734,58,-0.0599,0.2081
+bm,Valuation,,0,,0,-5.0714,263,-2.2695,127,,
+idiovol,Market,,0,,0,-11.7588,49,-7.4820,11,,
+leverage,Fundamental,,0,,0,0.0553,263,0.2839,127,,
+momentum,Market,,0,,0,-0.7738,259,-0.4008,120,,
+reversal,Market,,0,,0,1.0896,262,1.4236,127,,
+roa,Fundamental,2.4957,26,1.8754,6,0.9524,234,2.1622,117,-1.5433,0.2868
+seo_indicator,Event,,0,,0,-0.0414,205,-0.6106,117,,
+size,Market,,0,,0,-2.0386,263,-2.9040,127,,
+turnover,Market,,0,,0,-2.5772,48,-0.0881,11,,
